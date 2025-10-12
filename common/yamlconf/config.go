@@ -1,4 +1,4 @@
-package rqyamlconf
+package yamlconf
 
 import (
 	"os"

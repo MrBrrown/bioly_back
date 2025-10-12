@@ -1,0 +1,11 @@
+proxies:
+  - url: http://payment:8088
+    endpint: edit
+  - url: http://localhost:8889
+    endpint: user
+
+server:
+  address: "0.0.0.0:8080"
+  readtimeout: 5s
+  writetimeout: 10s
+  shutdowntime: 15s
