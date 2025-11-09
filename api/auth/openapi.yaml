@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Bioly Auth Service
+  version: 0.1.0
+  description: >
+    JWT-based authentication service providing access and refresh tokens,
+    basic user management endpoints, and health checks.
+
+servers:
+  - url: https://gateway.local/auth
+    description: Access through gateway (prefix stripped by gateway)
+
+tags:
+  - name: system
+    description: Service health and monitoring endpoints
+  - name: auth
+    description: Authentication and token refresh
+  - name: users
+    description: User management endpoints
+
+paths:
+  /ping:
+    get:
+      tags: [system]
+      summary: Ping endpoint
+      description: Simple liveness check endpoint returning "pong".
+      operationId: ping
+      responses:
+        '200':
+          description: Pong
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      description: Returns "OK" if the service is healthy and ready.
+      operationId: health
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /login:
+    post:
+      tags: [auth]
+      summary: Authenticate user
+      description: >
+        Authenticates a user using username and password.
+        Returns a pair of JWT tokens (access + refresh) and user data.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            examples:
+              default:
+                value: { username: "admin", password: "secret" }
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+
+  /refresh:
+    post:
+      tags: [auth]
+      summary: Refresh JWT tokens
+      description: >
+        Generates a new access and refresh token pair using a valid refresh token.
+      operationId: refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+            examples:
+              default:
+                value: { refresh: "base64url-encoded-refresh-token" }
+      responses:
+        '200':
+          description: Tokens successfully refreshed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '501':
+          description: Not implemented yet
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+
+  /users:
+    post:
+      tags: [users]
+      summary: Create a new user
+      description: >
+        Creates a new user with the provided username and password.
+        The response contains the user data (without tokens).
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateUserRequest' }
+            examples:
+              default:
+                value: { username: "newuser", password: "secret" }
+      responses:
+        '200':
+          description: User successfully created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+              examples:
+                example:
+                  value:
+                    access: ""
+                    refresh: ""
+                    user: { id: 10, username: "newuser" }
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+
+  /users/{id}:
+    delete:
+      tags: [users]
+      summary: Delete user by ID
+      description: Deletes a user by its numeric ID.
+      operationId: deleteUser
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User successfully deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
+              examples:
+                default:
+                  value: { status: "ok", message: "user deleted" }
+        '400':
+          description: Invalid user ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrResponse' }
+
+components:
+  schemas:
+    ErrResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: invalid credentials
+        app_code:
+          type: integer
+          format: int64
+          nullable: true
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+
+    RefreshRequest:
+      type: object
+      required: [refresh]
+      properties:
+        refresh:
+          type: string
+          description: Opaque refresh token string
+
+    CreateUserRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+
+    UserDTO:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+
+    LoginResponse:
+      type: object
+      required: [access, refresh, user]
+      properties:
+        access:
+          type: string
+          description: JWT access token (empty for /users endpoint)
+        refresh:
+          type: string
+          description: JWT refresh token (empty for /users endpoint)
+        user:
+          $ref: '#/components/schemas/UserDTO'
+
+    OkResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        message:
+          type: string
+          example: user deleted

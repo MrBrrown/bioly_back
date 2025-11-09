@@ -1,1 +1,0 @@
-#Docker file for the gateway service

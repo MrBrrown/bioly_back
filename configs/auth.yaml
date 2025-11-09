@@ -1,0 +1,19 @@
+auth_db:
+  host: bioly_db
+  port: 5432
+  login: user
+  pass: password
+  db: auth_db
+
+http:
+  host: 0.0.0.0
+  port: 8088
+  read_timeout: 10s
+  write_timeout: 10s
+
+jwt:
+  access_secret: "super-secret-access-key"
+  refresh_secret: "super-secret-refresh-key"
+  access_ttl: 15m
+  refresh_ttl: 720h
+  issuer: "auth.bioly.local"

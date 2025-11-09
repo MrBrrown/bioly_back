@@ -1,0 +1,39 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: bioly_gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/upstreams.d:/etc/nginx/upstreams.d:ro
+      - ./nginx/locations.d:/etc/nginx/locations.d:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./services/authservice/Dockerfile
+    container_name: auth
+    environment:
+      - LOG_DIR=/logs
+      - CONFIG_PATH=./config.yml
+    volumes:
+      - ./configs/auth.yaml:/config.yml:ro
+      - ./logs/services/auth:/logs
+    restart: "always"
+
+  database:
+    container_name: bioly_db
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bioly_db
+    volumes:
+      #- ./database:/var/lib/postgresql/data
+      - ./sql/:/docker-entrypoint-initdb.d/
+    ports:
+      - "5432:5432"
