@@ -25,6 +25,19 @@ services:
       - ./logs/services/auth:/logs
     restart: "always"
 
+  profile:
+    build:
+      context: .
+      dockerfile: ./services/profileservice/Dockerfile
+    container_name: profile
+    environment:
+      - LOG_DIR=/logs
+      - CONFIG_PATH=./config.yml
+    volumes:
+      - ./configs/profile.yaml:/config.yml:ro
+      - ./logs/services/profile:/logs
+    restart: "always"
+
   database:
     container_name: bioly_db
     image: postgres:13

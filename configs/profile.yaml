@@ -1,0 +1,12 @@
+profile_db:
+  host: bioly_db
+  port: 5432
+  login: user
+  pass: password
+  db: bioly
+
+http:
+  host: 0.0.0.0
+  port: 8089
+  read_timeout: 10s
+  write_timeout: 10s

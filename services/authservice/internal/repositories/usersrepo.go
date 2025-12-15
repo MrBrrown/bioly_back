@@ -26,13 +26,13 @@ type usersImpl struct {
 	db *sqlx.DB
 }
 
-func NewUsers(db *sqlx.DB) *usersImpl {
+func NewUsers(db *sqlx.DB) Users {
 	return &usersImpl{db: db}
 }
 
 func (r *usersImpl) Add(ctx context.Context, u *types.User) error {
 	q := `
-		INSERT INTO users (username, password_hash)
+		INSERT INTO auth.users (username, password_hash)
 		VALUES ($1, $2)
 		RETURNING id, created_at, updated_at
 	`
@@ -48,7 +48,7 @@ func (r *usersImpl) Add(ctx context.Context, u *types.User) error {
 }
 
 func (r *usersImpl) Delete(ctx context.Context, id int64) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
+	res, err := r.db.ExecContext(ctx, `DELETE FROM auth.users WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (r *usersImpl) VerifyCredentials(ctx context.Context, username, password st
 	var u types.User
 	err := r.db.GetContext(ctx, &u, `
 		SELECT id, username, password_hash, last_login_at, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE lower(username) = lower($1)
 		LIMIT 1
 	`, username)
@@ -78,7 +78,7 @@ func (r *usersImpl) VerifyCredentials(ctx context.Context, username, password st
 		return nil, ErrInvalidCredentials
 	}
 	_, _ = r.db.ExecContext(ctx, `
-		UPDATE users
+		UPDATE auth.users
 		SET last_login_at = NOW(), updated_at = NOW()
 		WHERE id = $1
 	`, u.ID)

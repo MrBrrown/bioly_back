@@ -29,7 +29,7 @@ func TestUsers_Add_Success(t *testing.T) {
 	u := &types.User{Username: "admin", PasswordHash: "$argon2id$v=19$m=65536,t=3,p=2$SALT$HASH"}
 
 	q := regexp.QuoteMeta(`
-		INSERT INTO users (username, password_hash)
+		INSERT INTO auth.users (username, password_hash)
 		VALUES ($1, $2)
 		RETURNING id, created_at, updated_at
 	`)
@@ -62,7 +62,7 @@ func TestUsers_Add_Duplicate(t *testing.T) {
 	u := &types.User{Username: "admin", PasswordHash: "hash"}
 
 	q := regexp.QuoteMeta(`
-		INSERT INTO users (username, password_hash)
+		INSERT INTO auth.users (username, password_hash)
 		VALUES ($1, $2)
 		RETURNING id, created_at, updated_at
 	`)
@@ -86,7 +86,7 @@ func TestUsers_Delete_Success(t *testing.T) {
 
 	repo := NewUsers(xdb)
 
-	q := regexp.QuoteMeta(`DELETE FROM users WHERE id = $1`)
+	q := regexp.QuoteMeta(`DELETE FROM auth.users WHERE id = $1`)
 	mock.ExpectExec(q).
 		WithArgs(int64(42)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -106,7 +106,7 @@ func TestUsers_Delete_NotFound(t *testing.T) {
 
 	repo := NewUsers(xdb)
 
-	q := regexp.QuoteMeta(`DELETE FROM users WHERE id = $1`)
+	q := regexp.QuoteMeta(`DELETE FROM auth.users WHERE id = $1`)
 	mock.ExpectExec(q).
 		WithArgs(int64(99)).
 		WillReturnResult(sqlmock.NewResult(0, 0))
@@ -132,7 +132,7 @@ func TestUsers_VerifyCredentials_Success(t *testing.T) {
 
 	sel := regexp.QuoteMeta(`
 		SELECT id, username, password_hash, last_login_at, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE lower(username) = lower($1)
 		LIMIT 1
 	`)
@@ -145,7 +145,7 @@ func TestUsers_VerifyCredentials_Success(t *testing.T) {
 		WillReturnRows(rows)
 
 	upd := regexp.QuoteMeta(`
-		UPDATE users
+		UPDATE auth.users
 		SET last_login_at = NOW(), updated_at = NOW()
 		WHERE id = $1
 	`)
@@ -175,7 +175,7 @@ func TestUsers_VerifyCredentials_InvalidPassword(t *testing.T) {
 
 	sel := regexp.QuoteMeta(`
 		SELECT id, username, password_hash, last_login_at, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE lower(username) = lower($1)
 		LIMIT 1
 	`)
@@ -205,7 +205,7 @@ func TestUsers_VerifyCredentials_NoUser(t *testing.T) {
 
 	sel := regexp.QuoteMeta(`
 		SELECT id, username, password_hash, last_login_at, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE lower(username) = lower($1)
 		LIMIT 1
 	`)

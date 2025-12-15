@@ -3,7 +3,7 @@ auth_db:
   port: 5432
   login: user
   pass: password
-  db: auth_db
+  db: bioly
 
 http:
   host: 0.0.0.0
